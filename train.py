@@ -29,8 +29,8 @@ datafile_encoding = 'utf-8'
 ### Step 2: set model size #############################################################################
 
 ctx_len = 1024        # ===> increase T_MAX in model.py if your ctx_len > 1024
-n_layer = 24
-n_embd = 768
+n_layer = 0
+n_embd = 368
 
 # 'RWKV' (better for char-level English) or 'RWKV-ffnPre' (better in some cases)
 model_type = 'RWKV'
@@ -40,19 +40,19 @@ model_type = 'RWKV'
 # ===> batch_size must be divisible by B_GROUP_FORWARD and B_GROUP_BACKWARD in model.py
 # For example, if your batch_size = 20, you can set B_GROUP_FORWARD = 4, B_GROUP_BACKWARD = 2
 # If you see "CUDA out of memory", reduce it. Use GPU-Z to find the highest value for your VRAM.
-batch_size = 12
+batch_size = 1
 
 ### Step 4: set learning rate, training mini-epochs #######################################################
 
 lr_init = 6e-4
 lr_final = 1e-5
 # the mini-epoch is very short and of fixed length (ctx_len * epoch_length_fixed tokens)
-n_epoch = 1000
+n_epoch = 10
 # 0 = never, 1 = every mini-epoch, 2 = every two mini-epochs, etc.
 epoch_save_frequency = 10
 epoch_save_path = 'your_path'
 
-epoch_length_fixed = 10000
+epoch_length_fixed = 100
 
 ########################################################################################################
 
@@ -92,7 +92,7 @@ train_dataset = Dataset(open(
 if __name__ == '__main__':
 
     model = GPT(GPTConfig(train_dataset.vocab_size, train_dataset.ctx_len, model_type=model_type,
-                          n_layer=n_layer, n_embd=n_embd)).cuda()
+                          n_layer=n_layer, n_embd=n_embd)).cpu()
 
     # # load a trained model. remember to change random seed
 #     m2 = torch.load('medium/trained-30L-768E-936.pth',map_location=torch.device('cpu'))

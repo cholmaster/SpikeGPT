@@ -74,7 +74,7 @@ class RWKV_RNN(MyModule):
 
                 w[x].requires_grad = False
                 if args.RUN_DEVICE == 'cuda' and x != 'emb.weight':
-                    w[x] = w[x].cuda()
+                    w[x] = w[x].cpu()
 
                 if ('blocks.' not in x) or ('blocks.0.' in x):
                     if print_need_newline:
@@ -109,7 +109,6 @@ class RWKV_RNN(MyModule):
 
         self.eval()
         gc.collect()
-        torch.cuda.empty_cache()
 
     def LN(self, x, w):
         return F.layer_norm(x, (self.args.n_embd,), weight=w.weight, bias=w.bias)
@@ -201,7 +200,7 @@ class RWKV_RNN(MyModule):
             else:
                 x = w.emb.weight[ctx[-1]]
             if self.RUN_DEVICE == 'cuda':
-                x = x.cuda()
+                x = x.cpu()
             try:
                 pos_emb = w.pos_emb[len(ctx)-1]
                 x = x + pos_emb

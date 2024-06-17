@@ -50,11 +50,11 @@ T_MAX = 1024  # increase this if your ctx_len is long [NOTE: TAKES LOTS OF VRAM!
 
 from torch.utils.cpp_extension import load
 
-wkv_cuda = load(name="wkv", sources=["cuda/wkv_op.cpp", "cuda/wkv_cuda.cu"],
-                verbose=True,
-                extra_cuda_cflags=['-res-usage', '--maxrregcount 60', '--use_fast_math', '-O3', '-Xptxas -O3',
-                                   f'-DTmax={T_MAX}'])
-
+#wkv_cuda = load(name="wkv", sources=["cuda/wkv_op.cpp", "cuda/wkv_cuda.cu"],
+#                verbose=True,
+#                extra_cuda_cflags=['-res-usage', '--maxrregcount 60', '--use_fast_math', '-O3', '-Xptxas -O3',
+#                                   f'-DTmax={T_MAX}'])
+#
 
 class WKV(torch.autograd.Function):
     @staticmethod
@@ -76,7 +76,7 @@ class WKV(torch.autograd.Function):
         k = k.float().contiguous()
         v = v.float().contiguous()
         ctx.save_for_backward(w, u, k, v)
-        y = torch.empty((B, T, C), device='cuda', memory_format=torch.contiguous_format)
+        y = torch.empty((B, T, C), device='ivpu', memory_format=torch.contiguous_format)
         wkv_cuda.forward(B, T, C, w, u, k, v, y)
         #         if '32' in os.environ['RWKV_FLOAT_MODE']:
         #             return y
@@ -95,10 +95,10 @@ class WKV(torch.autograd.Function):
         assert T <= T_MAX
         assert B * C % min(C, 1024) == 0
         w, u, k, v = ctx.saved_tensors
-        gw = torch.zeros((B, C), device='cuda').contiguous()
-        gu = torch.zeros((B, C), device='cuda').contiguous()
-        gk = torch.zeros((B, T, C), device='cuda').contiguous()
-        gv = torch.zeros((B, T, C), device='cuda').contiguous()
+        gw = torch.zeros((B, C), device='ivpu').contiguous()
+        gu = torch.zeros((B, C), device='ivpu').contiguous()
+        gk = torch.zeros((B, T, C), device='ivpu').contiguous()
+        gv = torch.zeros((B, T, C), device='ivpu').contiguous()
         #         if '32' in os.environ['RWKV_FLOAT_MODE']:
         #             wkv_cuda.backward(B, T, C, w, u, k, v, gy.contiguous(), gw, gu, gk, gv)
         #         else:
@@ -118,7 +118,7 @@ class WKV(torch.autograd.Function):
 #             return (None, None, None, gw.bfloat16(), gu.bfloat16(), gk.bfloat16(), gv.bfloat16())
 
 def RUN_CUDA(B, T, C, w, u, k, v):
-    return WKV.apply(B, T, C, w.cuda(), u.cuda(), k.cuda(), v.cuda())
+    return WKV.apply(B, T, C, w.cpu(), u.cpu(), k.cpu(), v.cpu())
 
 
 ########################################################################################################
